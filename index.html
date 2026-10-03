@@ -1,0 +1,28 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cronómetro de reunión</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Reunión"><meta name="theme-color" content="#3f51b5">
+<style>
+:root{--bg:#fff;--fg:#1c1b1f;--mu:#6b6b73;--ln:#e3e3e8;--pr:#3f51b5}
+@media(prefers-color-scheme:dark){:root{--bg:#121214;--fg:#eee;--mu:#9a9aa3;--ln:#2c2c31;--pr:#8c9eff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--ln)}header h1{font-size:18px;margin:0;flex:1}
+button,.btn{font:inherit;border:1px solid var(--ln);background:none;color:var(--fg);border-radius:10px;padding:9px 13px}
+.pr{background:var(--pr);color:#fff;border:0}.pr:disabled{opacity:.4}.w{padding:12px 14px}.mu{color:var(--mu);font-size:13px}.r{text-align:right}
+.ban{color:#fff;font-weight:700;padding:8px 14px;letter-spacing:.5px}.row{display:flex;align-items:center;padding:9px 14px;gap:10px;border-bottom:1px solid var(--ln)}.row .t{flex:1}
+.big{font-size:56px;font-weight:300;text-align:center;font-variant-numeric:tabular-nums}.card{margin:8px 14px;padding:14px;border-radius:14px;background:var(--ln)}
+.lap{font-size:40px;font-variant-numeric:tabular-nums}.bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}.bar i{display:block;height:100%}
+.nx{width:calc(100% - 28px);margin:8px 14px;height:72px;font-size:20px}.acts{display:flex;gap:8px;padding:0 14px 14px}.acts button{flex:1}
+.hide{display:none}
+</style></head><body>
+<div id="plan"><header><h1 id="ttl">Reunión de la semana</h1><button id="bh">Historial</button><button id="bi">Importar</button></header><div id="pb"></div></div>
+<div id="live" class="hide"><header><h1 id="lt">Reunión en curso</h1></header><div class="big" id="clk">00:00</div><div class="mu" style="text-align:center" id="beh"></div>
+<div class="card"><div class="mu" id="csec"></div><b id="ctit"></b><div class="lap" id="clap"></div><div class="mu" id="cinf"></div><div class="bar"><i id="cbar"></i></div></div>
+<div id="ll"></div><button class="pr nx" id="nx">Siguiente parte</button>
+<div class="acts"><button id="un">Deshacer</button><button id="pa">Pausa</button><button id="fi">Terminar</button></div></div>
+<div id="sum" class="hide"><header><button id="sb">‹</button><h1>Resumen</h1></header><div id="sb2"></div></div>
+<div id="his" class="hide"><header><button id="hb">‹</button><h1>Historial</h1></header><div id="hl"></div></div>
+<input type="file" id="fl" accept=".epub,application/epub+zip" class="hide">
+<script src="jszip.min.js"></script><script src="core.js"></script><script src="app.js"></script></body></html>
