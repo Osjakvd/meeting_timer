@@ -11,7 +11,7 @@ async function addIssue(buf,issue){
   const w=await readEpub(buf,issue);if(!w.length)throw Error('El archivo no tiene semanas');
   for(const x of w){const i=weeks.findIndex(y=>y.issue===x.issue&&y.start===x.start);if(i<0)weeks.push(x)}save();return w.length}
 async function download(issue){
-  const px=LS('mt_proxy','');
+  const px=LS('mt_proxy','https://dry-pond-b30d.superd-jy.workers.dev/');
   if(px){const r=await fetch(px+(px.includes('?')?'&':'?')+'issue='+issue);if(!r.ok)throw Error('Guía '+issue+' no disponible ('+r.status+')');return addIssue(await r.arrayBuffer(),issue)}
   const j=await(await fetch('https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=mwb&fileformat=EPUB&alllangs=0&langwritten=S&issue='+issue)).json();
   const u=j.files?.S?.EPUB?.[0]?.file?.url;if(!u)throw Error('Guía '+issue+' no disponible');
