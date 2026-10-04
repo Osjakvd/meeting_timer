@@ -1,3 +1,6 @@
+const showErr=m=>{let d=document.getElementById('err');if(!d){d=document.createElement('div');d.id='err';d.style.cssText='background:#d32f2f;color:#fff;padding:10px 14px;font-size:13px;white-space:pre-wrap';document.body.prepend(d)}d.textContent=m};
+window.addEventListener('error',e=>showErr('Error: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')'));
+window.addEventListener('unhandledrejection',e=>showErr('Error: '+((e.reason&&e.reason.message)||e.reason)));
 const $=s=>document.querySelector(s),LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},SV=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let weeks=LS('mt_weeks',[]),cur=null,A=null,tick=null,lock=null;
@@ -8,6 +11,8 @@ async function addIssue(buf,issue){
   const w=await readEpub(buf,issue);if(!w.length)throw Error('El archivo no tiene semanas');
   for(const x of w){const i=weeks.findIndex(y=>y.issue===x.issue&&y.start===x.start);if(i<0)weeks.push(x)}save();return w.length}
 async function download(issue){
+  const px=LS('mt_proxy','');
+  if(px){const r=await fetch(px+(px.includes('?')?'&':'?')+'issue='+issue);if(!r.ok)throw Error('Guía '+issue+' no disponible ('+r.status+')');return addIssue(await r.arrayBuffer(),issue)}
   const j=await(await fetch('https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=mwb&fileformat=EPUB&alllangs=0&langwritten=S&issue='+issue)).json();
   const u=j.files?.S?.EPUB?.[0]?.file?.url;if(!u)throw Error('Guía '+issue+' no disponible');
   return addIssue(await(await fetch(u)).arrayBuffer(),issue)}
@@ -15,7 +20,7 @@ const find=()=>{const n=Date.now();return weeks.find(w=>n>=w.start&&n<=w.end)};
 async function load(){
   cur=find();
   if(!cur){const e=[];for(const c of [issueFor(new Date()),prevIssue(issueFor(new Date()))]){try{await download(c);cur=find();if(cur)break}catch(x){e.push(c+': '+x.message)}}
-    if(!cur){$('#pb').innerHTML='<div class="w">No se encontró la semana'+(e.length?'<p class="mu">'+esc(e.join(' · '))+'</p>':'')+'<p>Importa el archivo EPUB de la guía (<b>Importar</b>).</p></div>';return}}
+    if(!cur){$('#pb').innerHTML='<div class="w"><b>'+(e.length?'No se pudo descargar la guía automáticamente.':'La guía descargada no incluye esta fecha.')+'</b>'+(e.length?'<p class="mu">'+esc(e.join(' · '))+'</p>':'')+'<p>Descarga el EPUB de la guía en tu iPhone (en la página de jw.org, opción EPUB) y tócalo en <b>Importar</b>.</p><p><button class="pr" id="im2">Importar guía (EPUB)</button></p><p><a href="https://www.jw.org/es/biblioteca/guia-actividades-reunion-testigos-jehova/">Abrir guías en jw.org</a></p></div>';$('#im2').onclick=()=>$('#fl').click();return}}
   render()}
 function render(){
   show('plan');const w=cur,p=tot(w.segs),m=TARGET-p,st=new Date();st.setHours(0,startMin(),0,0);
@@ -55,6 +60,8 @@ function summary(r,fresh){show('sum');const d=r.total-TARGET*1000;let o='<div cl
   $('#sb2').innerHTML=o;$('#sb').onclick=()=>fresh?(show('plan'),render()):hist()}
 function hist(){show('his');const h=LS('mt_hist',[]);$('#hl').innerHTML=h.length?h.map((r,i)=>'<div class="row" data-i="'+i+'"><div class="t">'+esc(r.label)+'<div class="mu">'+new Date(r.t0).toLocaleDateString('es')+'</div></div><div class="r">'+fc(r.total)+'</div><button data-d="'+i+'">🗑</button></div>').join(''):'<div class="w mu">Aún no hay reuniones cronometradas.</div>';
   document.querySelectorAll('#hl .row').forEach(r=>r.onclick=e=>{const i=+r.dataset.i;if(e.target.dataset.d!==undefined){if(confirm('¿Eliminar esta reunión del historial?')){h.splice(i,1);SV('mt_hist',h);hist()}return}summary(h[i],false)})}
+$('#fl').removeAttribute('accept');
+{const b=document.createElement('button');b.textContent='⚙';b.title='Descarga automática';b.onclick=()=>{const v=prompt('URL de tu Worker de descarga (vacío = desactivar)',LS('mt_proxy',''));if(v!==null){SV('mt_proxy',v.trim());load()}};$('#plan header').append(b)}
 $('#bh').onclick=hist;$('#hb').onclick=()=>{show('plan')};$('#bi').onclick=()=>$('#fl').click();
 $('#fl').onchange=async e=>{const f=e.target.files[0];if(!f)return;const m=f.name.match(/(\d{6})/);const is=m?m[1]:prompt('Número de la guía (AAAAMM, p. ej. 202611)');if(!is)return;try{await addIssue(await f.arrayBuffer(),is);alert('Guía importada');load()}catch(x){alert('No se pudo importar: '+x.message)}e.target.value=''};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
