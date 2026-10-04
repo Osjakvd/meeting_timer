@@ -3,13 +3,14 @@
 <title>Cronómetro de reunión</title>
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Reunión"><meta name="theme-color" content="#3f51b5">
+<meta name="apple-mobile-web-app-title" content="Reunión"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="#3f51b5">
 <style>
-:root{--bg:#fff;--fg:#1c1b1f;--mu:#6b6b73;--ln:#e3e3e8;--pr:#3f51b5}
+:root{color-scheme:light dark;--bg:#fff;--fg:#1c1b1f;--mu:#6b6b73;--ln:#e3e3e8;--pr:#3f51b5}
 @media(prefers-color-scheme:dark){:root{--bg:#121214;--fg:#eee;--mu:#9a9aa3;--ln:#2c2c31;--pr:#8c9eff}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--ln)}header h1{font-size:18px;margin:0;flex:1}
 button,.btn{font:inherit;border:1px solid var(--ln);background:none;color:var(--fg);border-radius:10px;padding:9px 13px}
+input{font:inherit;color:var(--fg);background:var(--ln);border:1px solid var(--ln);border-radius:10px;padding:8px 10px;min-height:38px}
 .pr{background:var(--pr);color:#fff;border:0}.pr:disabled{opacity:.4}.w{padding:12px 14px}.mu{color:var(--mu);font-size:13px}.r{text-align:right}
 .ban{color:#fff;font-weight:700;padding:8px 14px;letter-spacing:.5px}.row{display:flex;align-items:center;padding:9px 14px;gap:10px;border-bottom:1px solid var(--ln)}.row .t{flex:1}
 .big{font-size:56px;font-weight:300;text-align:center;font-variant-numeric:tabular-nums}.card{margin:8px 14px;padding:14px;border-radius:14px;background:var(--ln)}
