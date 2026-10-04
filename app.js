@@ -1,3 +1,4 @@
+const DEFAULT_PROXY='https://dry-pond-b30d.superd-jy.workers.dev/'; // <- pega aquí la dirección de tu Worker, p. ej. 'https://tu-worker.workers.dev'
 const showErr=m=>{let d=document.getElementById('err');if(!d){d=document.createElement('div');d.id='err';d.style.cssText='background:#d32f2f;color:#fff;padding:10px 14px;font-size:13px;white-space:pre-wrap';document.body.prepend(d)}d.textContent=m};
 window.addEventListener('error',e=>showErr('Error: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')'));
 window.addEventListener('unhandledrejection',e=>showErr('Error: '+((e.reason&&e.reason.message)||e.reason)));
@@ -11,7 +12,7 @@ async function addIssue(buf,issue){
   const w=await readEpub(buf,issue);if(!w.length)throw Error('El archivo no tiene semanas');
   for(const x of w){const i=weeks.findIndex(y=>y.issue===x.issue&&y.start===x.start);if(i<0)weeks.push(x)}save();return w.length}
 async function download(issue){
-  const px=LS('mt_proxy','https://dry-pond-b30d.superd-jy.workers.dev/');
+  const px=LS('mt_proxy',DEFAULT_PROXY);
   if(px){const r=await fetch(px+(px.includes('?')?'&':'?')+'issue='+issue);if(!r.ok)throw Error('Guía '+issue+' no disponible ('+r.status+')');return addIssue(await r.arrayBuffer(),issue)}
   const j=await(await fetch('https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=mwb&fileformat=EPUB&alllangs=0&langwritten=S&issue='+issue)).json();
   const u=j.files?.S?.EPUB?.[0]?.file?.url;if(!u)throw Error('Guía '+issue+' no disponible');
@@ -22,14 +23,25 @@ async function load(){
   if(!cur){const e=[];for(const c of [issueFor(new Date()),prevIssue(issueFor(new Date()))]){try{await download(c);cur=find();if(cur)break}catch(x){e.push(c+': '+x.message)}}
     if(!cur){$('#pb').innerHTML='<div class="w"><b>'+(e.length?'No se pudo descargar la guía automáticamente.':'La guía descargada no incluye esta fecha.')+'</b>'+(e.length?'<p class="mu">'+esc(e.join(' · '))+'</p>':'')+'<p>Descarga el EPUB de la guía en tu iPhone (en la página de jw.org, opción EPUB) y tócalo en <b>Importar</b>.</p><p><button class="pr" id="im2">Importar guía (EPUB)</button></p><p><a href="https://www.jw.org/es/biblioteca/guia-actividades-reunion-testigos-jehova/">Abrir guías en jw.org</a></p></div>';$('#im2').onclick=()=>$('#fl').click();return}}
   render()}
+const ymd=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+async function goTo(ts){
+  let w=weeks.find(x=>ts>=x.start&&ts<=x.end);
+  if(!w){const c=issueFor(new Date(ts));for(const k of [c,prevIssue(c)]){if(w)break;try{await download(k);w=weeks.find(x=>ts>=x.start&&ts<=x.end)}catch(e){}}}
+  if(!w){alert('No hay una guía para esa fecha. Si no se descarga sola, usa Importar con el EPUB.');return}
+  cur=w;render()}
+function navBar(){const n=find(),isNow=n&&n.start===cur.start;
+  return '<div class="w" style="display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--ln)"><button id="wp">‹</button><input type="date" id="dt" value="'+ymd(cur.start)+'" style="flex:1;font:inherit;min-width:0"><button id="wn">›</button>'+(isNow?'':'<button id="td">Hoy</button>')+'</div>'}
 function render(){
   show('plan');const w=cur,p=tot(w.segs),m=TARGET-p,st=new Date();st.setHours(0,startMin(),0,0);
-  $('#ttl').textContent=w.label;let o='<div class="w"><b>'+esc(w.book)+'</b><div class="mu">Plan '+fc(p*1000)+' / '+fc(TARGET*1000)+' · '+(m>=0?'margen '+fc(m*1000):'<b>excede '+fc(-m*1000)+'</b>')+'</div><div style="margin-top:8px">Inicio <input type="time" id="stt" value="'+String(Math.floor(startMin()/60)).padStart(2,'0')+':'+String(startMin()%60).padStart(2,'0')+'"> · fin estimado '+hm(+st+p*1000)+'</div></div>';
+  $('#ttl').textContent=w.label;let o=navBar()+'<div class="w"><b>'+esc(w.book)+'</b><div class="mu">Plan '+fc(p*1000)+' / '+fc(TARGET*1000)+' · '+(m>=0?'margen '+fc(m*1000):'<b>excede '+fc(-m*1000)+'</b>')+'</div><div style="margin-top:8px">Inicio <input type="time" id="stt" value="'+String(Math.floor(startMin()/60)).padStart(2,'0')+':'+String(startMin()%60).padStart(2,'0')+'"> · fin estimado '+hm(+st+p*1000)+'</div></div>';
   let acc=0,prev='';
   w.segs.forEach((s,i)=>{const c=col(s.sec);if(c&&s.sec!==prev)o+='<div class="ban" style="background:'+c[0]+'">'+c[1]+' '+esc(s.sec)+'</div>';prev=s.sec;
     o+='<div class="row" data-i="'+i+'" style="'+(c?'background:'+c[0]+'22':'')+'"><div class="t">'+esc(s.t)+'</div><div class="r">'+(s.s%60?fc(s.s*1000):s.s/60+' min')+'<div class="mu">'+hm(+st+acc*1000)+'–'+hm(+st+(acc+s.s)*1000)+'</div></div></div>';acc+=s.s});
   o+='<div class="w"><button id="ad">+ Agregar parte</button> <button id="rl">Recargar semana</button> <button class="pr" id="go" style="float:right">Iniciar reunión</button></div><div class="mu w">Toca una parte para editarla.</div>';
   $('#pb').innerHTML=o;
+  $('#wp').onclick=()=>goTo(cur.start-86400000);$('#wn').onclick=()=>goTo(cur.end+86400000);
+  $('#dt').onchange=e=>{if(e.target.value)goTo(new Date(e.target.value+'T12:00:00').getTime())};
+  if($('#td'))$('#td').onclick=()=>{cur=find()||cur;render()};
   $('#stt').onchange=e=>{const[h,mi]=e.target.value.split(':');SV('mt_start',+h*60+ +mi);render()};
   document.querySelectorAll('.row').forEach(r=>r.onclick=()=>edit(+r.dataset.i));
   $('#ad').onclick=()=>edit(-1);$('#go').onclick=begin;
@@ -61,9 +73,14 @@ function summary(r,fresh){show('sum');const d=r.total-TARGET*1000;let o='<div cl
 function hist(){show('his');const h=LS('mt_hist',[]);$('#hl').innerHTML=h.length?h.map((r,i)=>'<div class="row" data-i="'+i+'"><div class="t">'+esc(r.label)+'<div class="mu">'+new Date(r.t0).toLocaleDateString('es')+'</div></div><div class="r">'+fc(r.total)+'</div><button data-d="'+i+'">🗑</button></div>').join(''):'<div class="w mu">Aún no hay reuniones cronometradas.</div>';
   document.querySelectorAll('#hl .row').forEach(r=>r.onclick=e=>{const i=+r.dataset.i;if(e.target.dataset.d!==undefined){if(confirm('¿Eliminar esta reunión del historial?')){h.splice(i,1);SV('mt_hist',h);hist()}return}summary(h[i],false)})}
 $('#fl').removeAttribute('accept');
-{const b=document.createElement('button');b.textContent='⚙';b.title='Descarga automática';b.onclick=()=>{const v=prompt('URL de tu Worker de descarga (vacío = desactivar)',LS('mt_proxy',''));if(v!==null){SV('mt_proxy',v.trim());load()}};$('#plan header').append(b)}
+{const b=document.createElement('button');b.textContent='⚙';b.title='Descarga automática';b.onclick=()=>{const v=prompt('URL de tu Worker de descarga (vacío = desactivar)',LS('mt_proxy',DEFAULT_PROXY));if(v!==null){SV('mt_proxy',v.trim());load()}};$('#plan header').append(b)}
 $('#bh').onclick=hist;$('#hb').onclick=()=>{show('plan')};$('#bi').onclick=()=>$('#fl').click();
 $('#fl').onchange=async e=>{const f=e.target.files[0];if(!f)return;const m=f.name.match(/(\d{6})/);const is=m?m[1]:prompt('Número de la guía (AAAAMM, p. ej. 202611)');if(!is)return;try{await addIssue(await f.arrayBuffer(),is);alert('Guía importada');load()}catch(x){alert('No se pudo importar: '+x.message)}e.target.value=''};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
-document.addEventListener('visibilitychange',()=>{if(A&&!document.hidden)live()});
+let hid=0;
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){hid=Date.now();return}
+  if(A){live();return}
+  if(hid&&Date.now()-hid>300000&&cur&&!$('#plan').classList.contains('hide')){const n=find();if(n&&n.start!==cur.start){cur=n;render()}}
+});
 A=LS('mt_act',null);if(A)live();else load();
