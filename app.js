@@ -1,4 +1,4 @@
-const DEFAULT_PROXY='https://dry-pond-b30d.superd-jy.workers.dev/'; // <- pega aquí la dirección de tu Worker, p. ej. 'https://tu-worker.workers.dev'
+const DEFAULT_PROXY='https://dry-pond-b30d.superd-jy.workers.dev'; // <- pega aquí la dirección de tu Worker, p. ej. 'https://tu-worker.workers.dev'
 const showErr=m=>{let d=document.getElementById('err');if(!d){d=document.createElement('div');d.id='err';d.style.cssText='background:#d32f2f;color:#fff;padding:10px 14px;font-size:13px;white-space:pre-wrap';document.body.prepend(d)}d.textContent=m};
 window.addEventListener('error',e=>showErr('Error: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')'));
 window.addEventListener('unhandledrejection',e=>showErr('Error: '+((e.reason&&e.reason.message)||e.reason)));
@@ -32,11 +32,11 @@ async function goTo(ts){
 function navBar(){const n=find(),isNow=n&&n.start===cur.start;
   return '<div class="w" style="display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--ln)"><button id="wp">‹</button><input type="date" id="dt" value="'+ymd(cur.start)+'" style="flex:1;font:inherit;min-width:0"><button id="wn">›</button>'+(isNow?'':'<button id="td">Hoy</button>')+'</div>'}
 function render(){
-  show('plan');const w=cur,p=tot(w.segs),m=TARGET-p,st=new Date();st.setHours(0,startMin(),0,0);
+  fixSec();show('plan');const w=cur,p=tot(w.segs),m=TARGET-p,st=new Date();st.setHours(0,startMin(),0,0);
   $('#ttl').textContent=w.label;let o=navBar()+'<div class="w"><b>'+esc(w.book)+'</b><div class="mu">Plan '+fc(p*1000)+' / '+fc(TARGET*1000)+' · '+(m>=0?'margen '+fc(m*1000):'<b>excede '+fc(-m*1000)+'</b>')+'</div><div style="margin-top:8px">Inicio <input type="time" id="stt" value="'+String(Math.floor(startMin()/60)).padStart(2,'0')+':'+String(startMin()%60).padStart(2,'0')+'"> · fin estimado '+hm(+st+p*1000)+'</div></div>';
   let acc=0,prev='';
   w.segs.forEach((s,i)=>{const c=col(s.sec);if(c&&s.sec!==prev)o+='<div class="ban" style="background:'+c[0]+'">'+c[1]+' '+esc(s.sec)+'</div>';prev=s.sec;
-    o+='<div class="row" data-i="'+i+'" style="'+(c?'background:'+c[0]+'22':'')+'"><div class="t">'+esc(s.t)+'</div><div class="r">'+(s.s%60?fc(s.s*1000):s.s/60+' min')+'<div class="mu">'+hm(+st+acc*1000)+'–'+hm(+st+(acc+s.s)*1000)+'</div></div></div>';acc+=s.s});
+    o+='<div class="row" data-i="'+i+'" style="'+(c?'background:'+c[0]+'22':'')+'"><div class="t">'+esc(s.t)+'</div><div class="r">'+(s.s%60?fc(s.s*1000):s.s/60+' min')+'<div class="mu">'+hm(+st+acc*1000)+'–'+hm(+st+(acc+s.s)*1000)+'</div></div>'+(s.k==='extra'?'<span style="display:flex;flex-direction:column;gap:4px"><button data-m="-1" style="padding:2px 10px">▲</button><button data-m="1" style="padding:2px 10px">▼</button></span>':'')+'</div>';acc+=s.s});
   o+='<div class="w"><button id="ad">+ Agregar parte</button> <button id="rl">Recargar semana</button> <button class="pr" id="go" style="float:right">Iniciar reunión</button></div><div class="mu w">Toca una parte para editarla.</div>';
   $('#pb').innerHTML=o;
   $('#wp').onclick=()=>goTo(cur.start-86400000);$('#wn').onclick=()=>goTo(cur.end+86400000);
@@ -44,12 +44,16 @@ function render(){
   if($('#td'))$('#td').onclick=()=>{cur=find()||cur;render()};
   $('#stt').onchange=e=>{const[h,mi]=e.target.value.split(':');SV('mt_start',+h*60+ +mi);render()};
   document.querySelectorAll('.row').forEach(r=>r.onclick=()=>edit(+r.dataset.i));
+  document.querySelectorAll('[data-m]').forEach(b=>b.onclick=e=>{e.stopPropagation();move(+b.closest('.row').dataset.i,+b.dataset.m)});
   $('#ad').onclick=()=>edit(-1);$('#go').onclick=begin;
   $('#rl').onclick=async()=>{if(!confirm('Se volverá a descargar la guía y se perderán tus cambios de esta semana.'))return;try{const k=cur.issue;weeks=weeks.filter(x=>x.issue!==k);save();await download(k);cur=find();render()}catch(e){alert(e.message+'\nUsa Importar con el EPUB.');weeks=LS('mt_weeks',[])}}}
+/* Las partes agregadas (k==='extra') toman la sección de la parte de arriba, o la de abajo si van primeras. */
+function fixSec(){const s=cur.segs,f=s.find(x=>x.k!=='extra');let prev=null;for(const x of s){if(x.k==='extra')x.sec=prev||(f?f.sec:x.sec);prev=x.sec}}
+function move(i,d){const j=i+d,s=cur.segs;if(j<0||j>=s.length)return;[s[i],s[j]]=[s[j],s[i]];fixSec();save();render()}
 function edit(i){
   const s=i<0?{t:'',s:300,k:'extra',sec:'EXTRA'}:cur.segs[i],t=prompt('Título (vacío = eliminar)',s.t);if(t===null)return;
   if(!t.trim()&&i>=0){cur.segs.splice(i,1)}else{const m=prompt('Duración en minutos (admite 1.5)',s.s/60);if(m===null)return;s.t=t.trim();s.s=Math.round(parseFloat(m.replace(',','.'))*60)||0;if(i<0)cur.segs.push(s)}
-  save();render()}
+  fixSec();save();render()}
 /* ---------- cronómetro ---------- */
 const el=()=>(A.end||A.pa||Date.now())-A.t0-A.pt;
 const persist=()=>SV('mt_act',A);
