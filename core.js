@@ -1,5 +1,5 @@
 const MON={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};
-const SONG=300,COM=60,TARGET=6300;
+const SONG=300,COM=60,PRES=20,TARGET=6300;
 const issueFor=d=>{const m=d.getMonth()+1;return ''+d.getFullYear()+String(m%2?m:m-1).padStart(2,'0')};
 const prevIssue=c=>{let y=+c.slice(0,4),m=+c.slice(4)-2;if(m<1){m+=12;y--}return ''+y+String(m).padStart(2,'0')};
 function rangeOf(raw,issue){
@@ -36,7 +36,15 @@ function parseWeek(doc,issue){
   const out=[];
   for(const s of segs){out.push(s);
     if(s.k==='part'&&(s.t.includes('Lectura de la Biblia')||s.sec.toUpperCase().includes('MAESTROS')))out.push({k:'comment',sec:s.sec,t:'Comentario',s:COM})}
-  return{issue,label,book,start:r.start,end:r.end,segs:out};
+  /* Presentación (20 s) antes de cada parte salvo: 1ª canción, introducción, conclusión, punto 1, última canción, comentarios y partes con comentario antes.
+     Esos segundos se restan por igual de los cánticos. */
+  const fs=out.findIndex(x=>x.k==='song'),ls=out.map(x=>x.k).lastIndexOf('song'),o2=[];let tp=0;
+  out.forEach((s,i)=>{const p=out[i-1];
+    if(!(i===fs||i===ls||s.k==='intro'||s.k==='closing'||s.k==='comment'||/^1\.\s/.test(s.t)||(p&&p.k==='comment'))){o2.push({k:'presentation',sec:s.sec,t:'Presentación',s:PRES});tp+=PRES}
+    o2.push(s)});
+  const sg=o2.filter(x=>x.k==='song');
+  if(sg.length&&tp){const b=Math.floor(tp/sg.length),r2=tp%sg.length;sg.forEach((x,j)=>{x.s-=b+(j<r2?1:0)})}
+  return{issue,label,book,start:r.start,end:r.end,segs:o2};
 }
 async function readEpub(buf,issue){
   const z=await JSZip.loadAsync(buf),weeks=[];

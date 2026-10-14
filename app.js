@@ -1,4 +1,4 @@
-const DEFAULT_PROXY='https://dry-pond-b30d.superd-jy.workers.dev'; // <- pega aquí la dirección de tu Worker, p. ej. 'https://tu-worker.workers.dev'
+const DEFAULT_PROXY=''; // <- pega aquí la dirección de tu Worker, p. ej. 'https://tu-worker.workers.dev'
 const showErr=m=>{let d=document.getElementById('err');if(!d){d=document.createElement('div');d.id='err';d.style.cssText='background:#d32f2f;color:#fff;padding:10px 14px;font-size:13px;white-space:pre-wrap';document.body.prepend(d)}d.textContent=m};
 window.addEventListener('error',e=>showErr('Error: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')'));
 window.addEventListener('unhandledrejection',e=>showErr('Error: '+((e.reason&&e.reason.message)||e.reason)));
@@ -52,7 +52,7 @@ function fixSec(){const s=cur.segs,f=s.find(x=>x.k!=='extra');let prev=null;for(
 function move(i,d){const j=i+d,s=cur.segs;if(j<0||j>=s.length)return;[s[i],s[j]]=[s[j],s[i]];fixSec();save();render()}
 function edit(i){
   const s=i<0?{t:'',s:300,k:'extra',sec:'EXTRA'}:cur.segs[i],t=prompt('Título (vacío = eliminar)',s.t);if(t===null)return;
-  if(!t.trim()&&i>=0){cur.segs.splice(i,1)}else{const m=prompt('Duración en minutos (admite 1.5)',s.s/60);if(m===null)return;s.t=t.trim();s.s=Math.round(parseFloat(m.replace(',','.'))*60)||0;if(i<0)cur.segs.push(s)}
+  if(!t.trim()&&i>=0){cur.segs.splice(i,1)}else{const m=prompt('Duración en minutos (admite 1.5)',s.s/60);if(m===null)return;s.t=t.trim();s.s=Math.round(parseFloat(m.replace(',','.'))*60)||0;if(i<0){const L=cur.segs[cur.segs.length-1],aux=/^(presentaci|comentario)/i.test(s.t);if(L&&L.k!=='comment'&&!aux)cur.segs.push({k:'extra',sec:'EXTRA',t:'Presentación',s:20});cur.segs.push(s)}}
   fixSec();save();render()}
 /* ---------- cronómetro ---------- */
 const el=()=>(A.end||A.pa||Date.now())-A.t0-A.pt;
