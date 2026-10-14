@@ -1,4 +1,4 @@
-const DEFAULT_PROXY=''; // <- pega aquí la dirección de tu Worker, p. ej. 'https://tu-worker.workers.dev'
+const DEFAULT_PROXY='dry-pond-b30d.superd-jy.workers.dev'; // <- pega aquí la dirección de tu Worker, p. ej. 'https://tu-worker.workers.dev'
 const showErr=m=>{let d=document.getElementById('err');if(!d){d=document.createElement('div');d.id='err';d.style.cssText='background:#d32f2f;color:#fff;padding:10px 14px;font-size:13px;white-space:pre-wrap';document.body.prepend(d)}d.textContent=m};
 window.addEventListener('error',e=>showErr('Error: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')'));
 window.addEventListener('unhandledrejection',e=>showErr('Error: '+((e.reason&&e.reason.message)||e.reason)));
